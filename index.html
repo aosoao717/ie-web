@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>수입검사 및 협력사 품질 평가</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231E3A5F'/%3E%3Cpath d='M9 16.5l4.5 4.5L23 11' stroke='%23F08A3C' stroke-width='3.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32"><path d="M9 16.5l4.5 4.5L23 11"/></svg>
+      </div>
+      <div>
+        <h1>수입검사 및 협력사 품질 평가</h1>
+        <p>KS Q ISO 2859-1 (검사수준 II) 자동 판정 · 엄격도 자동 전환</p>
+      </div>
+    </div>
+    <div class="conn" id="conn"><span class="dot"></span><span id="conn-text">연결 확인 중…</span></div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="inspect" role="tab"><b>①</b> 입고·검사</button>
+    <button class="tab" data-tab="history" role="tab"><b>②</b> 검사 이력</button>
+    <button class="tab" data-tab="pareto" role="tab"><b>③</b> 불량 파레토</button>
+    <button class="tab" data-tab="grade" role="tab"><b>④</b> 협력사 등급</button>
+    <button class="tab" data-tab="master" role="tab"><b>⑤</b> 기준정보</button>
+  </nav>
+
+  <main>
+    <div class="setup" id="setup" hidden>
+      <h2>Supabase 연결 정보가 아직 없습니다</h2>
+      <p><code>js/config.js</code> 파일의 <code>SUPABASE_URL</code>과 <code>SUPABASE_KEY</code>에 내 Supabase 프로젝트 값을 넣어 주세요.
+        자세한 방법은 함께 드린 <b>README.md</b> 3단계에 있습니다.</p>
+    </div>
+
+    <!-- ① 입고·검사 ------------------------------------------------------ -->
+    <section class="panel active" id="tab-inspect">
+      <div class="card">
+        <h2 class="card-title">① 입고 로트 등록</h2>
+        <form class="row-form" id="lot-form" autocomplete="off">
+          <label>로트번호<input id="lot-no" required></label>
+          <label class="grow">부품<select id="lot-part" required></select></label>
+          <label>입고일<input type="date" id="lot-recv" required></label>
+          <label>입고수량<input id="lot-qty" inputmode="numeric" placeholder="예) 1000" required></label>
+          <button class="btn primary" type="submit">로트 등록</button>
+        </form>
+      </div>
+
+      <div class="split">
+        <div class="card">
+          <h2 class="card-title">② 검사 대기 로트 <span class="hint">행을 클릭해서 선택</span></h2>
+          <div class="table-wrap tall">
+            <table class="grid clickable" id="pending-table">
+              <thead><tr><th>로트번호</th><th>부품</th><th>협력사</th><th>입고일</th><th class="num">입고수량</th><th class="num">AQL</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card inspect-card">
+          <h2 class="card-title">③ 샘플링 계획과 검사 결과 입력</h2>
+          <div id="plan-empty" class="empty">왼쪽에서 로트를 선택하세요.</div>
+          <div id="plan-box" hidden>
+            <div class="lot-title" id="plan-lot"></div>
+            <div class="sev-line">검사 엄격도 <span class="badge" id="plan-sev"></span></div>
+            <div class="plan" id="plan-text"></div>
+            <form id="insp-form" autocomplete="off">
+              <label class="inline">검사원<select id="insp-inspector"></select></label>
+              <fieldset class="defects">
+                <legend>불량유형별 불량품 수 <span class="hint">(없으면 0)</span></legend>
+                <div class="defect-grid" id="defect-grid"></div>
+              </fieldset>
+              <label class="inline">비고<input id="insp-remark"></label>
+              <button class="btn primary wide" type="submit" id="btn-save">판정 저장</button>
+            </form>
+          </div>
+          <div class="result" id="insp-result" hidden></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ② 검사 이력 ------------------------------------------------------ -->
+    <section class="panel" id="tab-history">
+      <div class="card">
+        <div class="filters" id="hist-filters"></div>
+        <div class="table-wrap tall">
+          <table class="grid clickable" id="hist-table">
+            <thead><tr><th>검사일시</th><th>로트번호</th><th>협력사</th><th>부품</th><th class="num">입고수량</th><th>엄격도</th>
+              <th class="num">n / Ac / Re</th><th class="num">불량</th><th>판정</th><th>검사원</th><th>비고 / 취소 사유</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="bar">
+          <button class="btn danger" id="btn-cancel">선택한 검사 판정 취소</button>
+          <button class="btn" id="btn-hist-csv">CSV 저장</button>
+          <span class="spacer"></span>
+          <span class="count" id="hist-count"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ③ 불량 파레토 ---------------------------------------------------- -->
+    <section class="panel" id="tab-pareto">
+      <div class="card">
+        <div class="filters" id="par-filters"></div>
+        <div class="pareto">
+          <div class="chart" id="par-chart"></div>
+          <div class="table-wrap">
+            <table class="grid" id="par-table">
+              <thead><tr><th class="num">순위</th><th>불량유형</th><th class="num">수량</th><th class="num">비율</th><th class="num">누적 비율</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 협력사 등급 ---------------------------------------------------- -->
+    <section class="panel" id="tab-grade">
+      <div class="card">
+        <div class="filters" id="grade-filters"></div>
+        <p class="legend">등급: 로트 불합격률 <b class="g-A">A ≤2%</b> · <b class="g-B">B ≤5%</b> · <b class="g-C">C ≤10%</b> · <b class="g-D">D &gt;10%</b> (검사 5로트 미만은 평가 보류)</p>
+        <h2 class="card-title">협력사 품질 랭킹</h2>
+        <div class="table-wrap">
+          <table class="grid" id="grade-table">
+            <thead><tr><th class="num">순위</th><th>협력사</th><th class="num">검사 로트</th><th class="num">불합격 로트</th>
+              <th class="num">로트 불합격률</th><th class="num">불량 ppm</th><th>등급</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <h2 class="card-title">부품별 현재 검사 엄격도</h2>
+        <div class="table-wrap">
+          <table class="grid" id="sev-table">
+            <thead><tr><th>부품번호</th><th>부품명</th><th>협력사</th><th class="num">AQL</th><th>엄격도</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 기준정보 ------------------------------------------------------- -->
+    <section class="panel" id="tab-master">
+      <div class="forms">
+        <form class="card mini" id="f-supplier" autocomplete="off">
+          <h2 class="card-title">협력사 추가</h2>
+          <label>코드<input name="code"></label>
+          <label>이름<input name="name"></label>
+          <label>담당자<input name="person"></label>
+          <label>연락처<input name="phone"></label>
+          <button class="btn primary" type="submit">추가</button>
+        </form>
+        <form class="card mini" id="f-part" autocomplete="off">
+          <h2 class="card-title">부품 추가</h2>
+          <label>부품번호<input name="part_no"></label>
+          <label>부품명<input name="name"></label>
+          <label>협력사<select name="supplier"></select></label>
+          <label>AQL<select name="aql"></select></label>
+          <button class="btn primary" type="submit">추가</button>
+        </form>
+        <form class="card mini" id="f-defect" autocomplete="off">
+          <h2 class="card-title">불량유형 추가</h2>
+          <label>코드<input name="code"></label>
+          <label>이름<input name="name"></label>
+          <button class="btn primary" type="submit">추가</button>
+        </form>
+        <form class="card mini" id="f-inspector" autocomplete="off">
+          <h2 class="card-title">검사원 추가</h2>
+          <label>이름<input name="name"></label>
+          <button class="btn primary" type="submit">추가</button>
+        </form>
+      </div>
+      <div class="card">
+        <h2 class="card-title">부품 목록 <span class="hint">검사 중지 부품은 협력사 개선을 확인한 뒤 '재개'</span></h2>
+        <div class="table-wrap">
+          <table class="grid clickable" id="master-table">
+            <thead><tr><th>부품번호</th><th>부품명</th><th>협력사</th><th class="num">AQL</th><th>엄격도</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="bar"><button class="btn" id="btn-resume">선택한 부품 검사 재개</button></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">데이터 저장 위치: <span id="foot-db">Supabase (클라우드 PostgreSQL)</span></footer>
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <!-- 순서 중요: Supabase 라이브러리 → 연결 정보 → 핵심 계산 → DB → 화면 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/logic.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+</html>
