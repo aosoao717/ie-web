@@ -22,3 +22,7 @@
 - [고정] DB는 exe와 같은 폴더의 `data/app.db`. 경로는 exe(또는 main.py) 위치 기준으로 계산. 파일이 없으면 첫 실행 때 테이블과 AQL 기준표를 만든다
 - [고정] exe는 `pyinstaller --onefile --noconsole` 로 만들고 DB를 exe 안에 넣지 않는다
 - 폴더 경로는 영문(예: C:\ie_app), OneDrive 폴더 사용 금지, python.org Python의 venv 사용
+
+## PWA 작업 규칙
+- 기존 기능 · DB 코드는 수정하지 않는다
+- 오프라인 캐시는 넣지 않는다

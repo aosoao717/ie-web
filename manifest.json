@@ -1,0 +1,30 @@
+{
+  "name": "수입검사 및 협력사 품질 평가",
+  "short_name": "수입검사",
+  "description": "KS Q ISO 2859-1 수입검사 자동 판정 및 협력사 품질 평가",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F3F5F8",
+  "theme_color": "#1E3A5F",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

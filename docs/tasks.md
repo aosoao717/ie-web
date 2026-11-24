@@ -48,3 +48,8 @@
 - [x] 7.3 ui.py: 판정 저장 전 확인창 (불량 수·샘플 수 표시)
 - [x] 7.4 test_logic.py 다시 실행 → 19건 통과 확인, CHANGELOG.md v1.1
 
+## 8. PWA 변환
+- [x] P1. manifest.json · 아이콘(192/512px) 추가, display: standalone
+- [x] P2. 최소 서비스 워커 등록 (캐시 없음)
+- [ ] P3. 배포 후 폰 설치 확인 (사람이 확인)
+
